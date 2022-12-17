@@ -5,13 +5,13 @@
 #include <math.h>
 #include <stdlib.h>
 
-#define ITER 5
-#define NREAD 20
-#define NSKIP 2
+#define ITER 15
+#define NREAD 48
+#define NSKIP 6
 
-long TIMELAP = 0; //5sec * 12*10
+long TIMELAP = 150; //5sec * 12*10
 volatile long time = 0;
-volatile int sample = 0;//5; //add every 6th sample to readings
+volatile int sample = 0;//6; //add every 6th sample to readings
 
 volatile int readings[NREAD];
 volatile int classes[NREAD];
@@ -74,6 +74,10 @@ void fit()
 {
   int n = 0;
   int i = 0;
+  for(n=0; n<NREAD; n++)
+  {
+      classes[n] = rand_();
+  }
   for(i=0; i<ITER; i++)
   {
     //m-step
@@ -107,9 +111,6 @@ void fit()
     double temp = mu0;
     mu0 = mu1;
     mu1 = temp;
-    temp = sd0;
-    sd0 = sd1;
-    sd1 = temp;
   }
 }
 
@@ -125,23 +126,24 @@ ISR(TIMER1_OVF_vect)
     fit();
     int DoN = classify(new_reading);
     
-    if(DoN==1)
+    if(DoN==0)
     {
       //open gate
+      PORTB &= ~(1<<PB1);
       PORTB |= (1<<PB0);
     }else
     {
       //close gate
       PORTB &= ~(1<<PB0);
-      
+      PORTB |= (1<<PB1);
     }
     //external led counter
     if(on==1){
       on=0;
-      PORTB &= ~(1<<PB1);
+      
     }else{
       on=1;
-      PORTB |= (1<<PB1);
+      
     }
     //add every nskip+1 sample to records
     if((sample%NSKIP)==0)
@@ -186,7 +188,7 @@ int main (void)
   TIMSK = (1<<TOIE1);
   sei();
   while (1) {
-    //
+    //wait for the timer interrupts
   }
  
   return 1;
